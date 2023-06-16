@@ -6,8 +6,10 @@
 #include <IRsend.h>
 #include "DHTesp.h"
 #include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
 
-// #define ENABLE_WIFI
+#define ENABLE_BLYNK
+
 // #define DEBUG
 #ifdef DEBUG
 #define PrintDebug(...) Serial.print(__VA_ARGS__)
@@ -31,9 +33,11 @@ const int infraRedSensorInputPin=D8;
 const int infraRedSensorOutputPin=D7;
 const int humidityInputPin=D6;
 
-// WIFI
-const char* ssid = "stav elizur"; //replace this with your WiFi network name
-const char* password = "0545634610"; //replace this with your WiFi network password
+// Blynk
+const char* ssid = "Elizur"; //replace this with your WiFi network name
+const char* password = "0547684611"; //replace this with your WiFi network password
+const char* blynkToken =  "oht3MaP6XwE4ToLGNU1Wte1_BkM3JRa7";
+BlynkTimer timer;
 
 //IR Receiver stuff
 IRrecv irrecv(infraRedSensorInputPin);
@@ -43,7 +47,7 @@ const uint16_t frequency = 38000;
 IRsend irsend(infraRedSensorOutputPin);
 
 // RGB - Test
-const uint8_t numOfBlueColorBits = 67;
+const uint8_t numOfBlueColorBits = 32;
 const uint64_t blueCode = 0xF7609F;
 const decode_type_t blueCodeType = NEC;
 
@@ -59,20 +63,49 @@ const decode_type_t redCodeType = NEC;
 DHTesp dht;
 
 // Functions
-void enableWifi()
+// This function sends Arduino's uptime every second to Virtual Pin 2.
+void myTimerEvent()
 {
-  WiFi.begin(ssid, password);
+  // You can send any value at any time.
+  // Please don't send more that 10 values per second.
+  Blynk.virtualWrite(V2, millis() / 1000);
+}
 
-  PrintInfoLn("Connecting");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    PrintInfo(".");
-  }
-  PrintInfoLn();
+void EnableBlynk()
+{
+  Blynk.begin(blynkToken, ssid, password);
+  // You can also specify server:
+  //Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "blynk.cloud", 80);
+  //Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, IPAddress(192,168,1,100), 8080);
 
-  PrintInfo("Connected, IP address: ");
-  PrintInfoLn(WiFi.localIP());
+  // Setup a function to be called every second
+  timer.setInterval(1000L, myTimerEvent);
+}
+
+void BlynkProcessing()
+{
+  Blynk.run();
+  timer.run();
+}
+
+// This function is called every time the Virtual Pin 0 state changes
+BLYNK_WRITE(V0)
+{
+  digitalWrite(buildInLedPin, !digitalRead(buildInLedPin)); 
+  // Set incoming value from pin V0 to a variable
+  int value = param.asInt();
+
+  // Update state
+  Blynk.virtualWrite(V1, value);
+}
+
+// This function is called every time the device is connected to the Blynk.Cloud
+BLYNK_CONNECTED()
+{
+  // Change Web Link Button message to "Congratulations!"
+  Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
+  Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
+  Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
 }
 
 // Testing  
@@ -253,10 +286,11 @@ void setup()
 {
   Serial.begin(9600);
   pinMode(buildInLedPin, OUTPUT);
+  digitalWrite(buildInLedPin, HIGH); 
 
-  // WiFi
-  #ifdef ENABLE_WIFI
-    enableWifi();
+  // Blynk
+  #ifdef ENABLE_BLYNK
+    EnableBlynk();
   #endif
 
   // InfraRed
@@ -272,11 +306,9 @@ void setup()
 
 void loop()
 {  
+  BlynkProcessing();
   IRProcessing();
   HumidityProcessing();
-
-  delay(1000);
-  digitalWrite(buildInLedPin, !digitalRead(buildInLedPin)); 
   {    
     // // PhotoResistor
     // // read the value from the sensor
