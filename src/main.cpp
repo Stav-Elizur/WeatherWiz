@@ -4,24 +4,36 @@
 #include <IRrecv.h>
 #include <IRutils.h>
 #include <IRsend.h>
+#include "DHTesp.h"
+#include <ESP8266WiFi.h>
 
+// #define ENABLE_WIFI
 // #define DEBUG
 #ifdef DEBUG
-#define PrintDebug(...) Serial.println(__VA_ARGS__)
+#define PrintDebug(...) Serial.print(__VA_ARGS__)
+#define PrintDebugLn(...) Serial.println(__VA_ARGS__)
 #else
 #define PrintDebug(...)
+#define PrintDebugLn(...)
 #endif
 
 #define INFO
 #ifdef INFO
-#define PrintInfo(...) Serial.println(__VA_ARGS__)
+#define PrintInfo(...) Serial.print(__VA_ARGS__)
+#define PrintInfoLn(...) Serial.println(__VA_ARGS__)
 #else
 #define PrintInfo(...)
+#define PrintInfoLn(...)
 #endif
 
 const int buildInLedPin = D9;
 const int infraRedSensorInputPin=D8;
 const int infraRedSensorOutputPin=D7;
+const int humidityInputPin=D6;
+
+// WIFI
+const char* ssid = "stav elizur"; //replace this with your WiFi network name
+const char* password = "0545634610"; //replace this with your WiFi network password
 
 //IR Receiver stuff
 IRrecv irrecv(infraRedSensorInputPin);
@@ -43,6 +55,26 @@ const uint8_t numOfRedColorBits = 32;
 const uint64_t redCode= 0xF720DF;
 const decode_type_t redCodeType = NEC;
 
+// Humidity stuff
+DHTesp dht;
+
+// Functions
+void enableWifi()
+{
+  WiFi.begin(ssid, password);
+
+  PrintInfoLn("Connecting");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    PrintInfo(".");
+  }
+  PrintInfoLn();
+
+  PrintInfo("Connected, IP address: ");
+  PrintInfoLn(WiFi.localIP());
+}
+
 // Testing  
 void TransmitIRSignal(decode_type_t type, void* data, uint32_t numOfData)
 {
@@ -50,34 +82,34 @@ void TransmitIRSignal(decode_type_t type, void* data, uint32_t numOfData)
   {
     case NEC:
     {
-      PrintInfo("NEC remote control");
+      PrintInfoLn("NEC remote control");
       uint64_t code = *((uint64_t*)data);
       irsend.sendNEC(code, numOfData);
       break;
     }
     case SONY:
-      PrintInfo("Sony remote control");
+      PrintInfoLn("Sony remote control");
       // Add your Sony remote control handling code here
       break;
     case RC5:
-      PrintInfo("RC5 remote control");
+      PrintInfoLn("RC5 remote control");
       // Add your RC5 remote control handling code here
       break;
     case RC6:
-      PrintInfo("RC6 remote control");
+      PrintInfoLn("RC6 remote control");
       // Add your RC6 remote control handling code here
       break;
     case DISH:
-      PrintInfo("DISH remote control");
+      PrintInfoLn("DISH remote control");
       // Add your DISH remote control handling code here
       break;
     case SHARP:
-      PrintInfo("Sharp remote control");
+      PrintInfoLn("Sharp remote control");
       // Add your Sharp remote control handling code here
       break;
     // Add more cases for other IR remote control types as needed
     default:
-      PrintInfo("Unknown remote control type");
+      PrintInfoLn("Unknown remote control type");
       // Add your default handling code here
       break;
   }
@@ -87,84 +119,74 @@ void translateIR(uint64_t value) // takes action based on IR code received descr
 {
   switch(value){
   case 0xFFA25D:  
-    PrintInfo(" CH-            "); 
+    PrintInfoLn("CH-            "); 
     break;
   case 0xFF629D:  
-    PrintInfo(" CH             "); 
+    PrintInfoLn("CH             "); 
     TransmitIRSignal(redCodeType, (void*)&redCode, numOfRedColorBits);
     break;
   case 0xFFE21D:  
-    PrintInfo(" CH+            "); 
+    PrintInfoLn("CH+            "); 
     break;
   case 0xFF22DD:  
-    PrintInfo(" |<<          "); 
+    PrintInfoLn("|<<          "); 
     break;
   case 0xFF02FD:  
-    PrintInfo(" >>|        "); 
+    PrintInfoLn(">>|        "); 
     TransmitIRSignal(greenCodeType, (void*)&greenCode, numOfGreenColorBits);
     break;
   case 0xFFC23D:  
-    PrintInfo(" PLAY/PAUSE     "); 
+    PrintInfoLn("PLAY/PAUSE     "); 
     break;
   case 0xFFE01F:  
-    PrintInfo(" VOL-           "); 
+    PrintInfoLn("VOL-           "); 
     break;
   case 0xFFA857:  
-    PrintInfo(" VOL+           "); 
+    PrintInfoLn("VOL+           "); 
     TransmitIRSignal(blueCodeType, (void*)&blueCode, numOfBlueColorBits);
     break;
   case 0xFF906F:  
-    PrintInfo(" EQ             "); 
+    PrintInfoLn("EQ             "); 
     break;
   case 0xFF6897:  
-    PrintInfo(" 0              "); 
+    PrintInfoLn("0              "); 
     break;
   case 0xFF9867:  
-    PrintInfo(" 100+           "); 
+    PrintInfoLn("100+           "); 
     break;
   case 0xFFB04F:  
-    PrintInfo(" 200+           "); 
+    PrintInfoLn("200+           "); 
     break;
   case 0xFF30CF:  
-    PrintInfo(" 1              "); 
+    PrintInfoLn("1              "); 
     break;
-
   case 0xFF18E7:  
-    PrintInfo(" 2              "); 
+    PrintInfoLn("2              "); 
     break;
-
   case 0xFF7A85:  
-    PrintInfo(" 3              "); 
+    PrintInfoLn("3              "); 
     break;
-
   case 0xFF10EF:  
-    PrintInfo(" 4              "); 
+    PrintInfoLn("4              "); 
     break;
-
   case 0xFF38C7:  
-    PrintInfo(" 5              "); 
+    PrintInfoLn("5              "); 
     break;
-
   case 0xFF5AA5:  
-    PrintInfo(" 6              "); 
+    PrintInfoLn("6              "); 
     break;
-
   case 0xFF42BD:  
-    PrintInfo(" 7              "); 
+    PrintInfoLn("7              "); 
     break;
-
   case 0xFF4AB5:  
-    PrintInfo(" 8              "); 
+    PrintInfoLn("8              "); 
     break;
-
   case 0xFF52AD:  
-    PrintInfo(" 9              "); 
+    PrintInfoLn("9              "); 
     break;
-
   default: 
-    PrintInfo(" unknown button   ");
-    PrintInfo("------------------");
-    PrintInfo(value, HEX);
+    PrintInfo("unknown button: ");
+    PrintInfoLn(value, HEX);
   }
 
   delay(500);
@@ -175,10 +197,10 @@ void IRProcessing()
   decode_results results;
   // InfraRed
   if (irrecv.decode(&results)) {
-    PrintDebug("\n\n-------------------------");
-    PrintDebug(results.value, HEX);
-    PrintDebug(results.bits, DEC);
-    PrintDebug(results.decode_type, DEC);
+    PrintDebugLn("-------------------------");
+    PrintDebugLn(results.value, HEX);
+    PrintDebugLn(results.bits, DEC);
+    PrintDebugLn(results.decode_type, DEC);
     // Convert the results into an array suitable for sendRaw().
     // resultToRawArray() allocates the memory we need for the array.
     uint16_t *raw_array = resultToRawArray(&results);
@@ -186,11 +208,11 @@ void IRProcessing()
     // Find out how many elements are in the array.
     uint16_t length = getCorrectedRawLength(&results);
 
-    PrintDebug("Received IR signal:");
-    PrintDebug(F("\n#define RAW_DATA_LEN "));
-    PrintDebug(length, DEC);
+    PrintDebugLn("Received IR signal:");
+    PrintDebug(F("#define RAW_DATA_LEN "));
+    PrintDebugLn(length, DEC);
 
-    PrintDebug(F("uint16_t rawData[RAW_DATA_LEN]={\n"));
+    PrintDebugLn(F("uint16_t rawData[RAW_DATA_LEN]={"));
     for (uint32_t i = 0; i < length; i++) 
     {
       PrintDebug(raw_array[i], DEC);
@@ -200,11 +222,31 @@ void IRProcessing()
         PrintDebug(F("\n"));
       }
     }
-      PrintDebug(F("};"));
+      PrintDebugLn(F("};"));
       translateIR(results.value);
-      PrintDebug("-------------------------");
+      PrintDebugLn("-------------------------");
       irrecv.resume();
   }
+}
+
+void HumidityProcessing()
+{
+  delay(dht.getMinimumSamplingPeriod());
+
+  float humidity = dht.getHumidity();
+  float temperature = dht.getTemperature();
+
+  PrintInfo(dht.getStatusString());
+  PrintInfo("\t");
+  PrintInfo(humidity, 1);
+  PrintInfo("\t\t");
+  PrintInfoLn(temperature, 1);
+  PrintDebug("\t\t");
+  PrintDebug(dht.toFahrenheit(temperature), 1);
+  PrintDebug("\t\t");
+  PrintDebug(dht.computeHeatIndex(temperature, humidity, false), 1);
+  PrintDebug("\t\t");
+  PrintDebugLn(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
 }
 
 void setup()
@@ -212,40 +254,30 @@ void setup()
   Serial.begin(9600);
   pinMode(buildInLedPin, OUTPUT);
 
+  // WiFi
+  #ifdef ENABLE_WIFI
+    enableWifi();
+  #endif
+
   // InfraRed
-  PrintInfo(F("Enabling IRin..."));
+  PrintInfoLn(F("Enabling IRin..."));
   irrecv.enableIRIn(); // Start the receiver
   irsend.begin(); // Start the transmitter
-  PrintInfo("Enabled IRin");
+  PrintInfoLn("Enabled IRin");
+
+  // Humidity
+  pinMode(humidityInputPin, INPUT);
+  dht.setup(humidityInputPin, DHTesp::DHT11); // Connect DHT sensor to GPIO 17
 }
 
 void loop()
 {  
   IRProcessing();
-  
+  HumidityProcessing();
 
   delay(1000);
   digitalWrite(buildInLedPin, !digitalRead(buildInLedPin)); 
-  {
-    // // Temperator Sensor
-    // RawValue = analogRead(temperaturePin);
-    // Voltage = (RawValue / 1023.0) * 5000; // 5000 to get millivots.
-    // tempC = (Voltage-500) * 0.1; // 500 is the offset
-    // tempF = (tempC * 1.8) + 32; // convert to F  
-    // Serial.print("Raw Value = " );                  
-    // Serial.print(RawValue);      
-    // Serial.print("\t milli volts = ");
-    // Serial.print(Voltage,0); //
-    // Serial.print("\t Temperature in C = ");
-    // Serial.print(tempC,1);
-    // Serial.print("\t Temperature in F = ");
-    // Serial.println(tempF,1);
-    // humiditysensorOutput = analogRead(temperaturePin);
-    // Serial.print("Humidity: "); // Printing out Humidity Percentage
-    // Serial.print(map(humiditysensorOutput, 0, 1023, 10, 70));
-    // Serial.println("%");
-    // delay(1000);  //iterate every 5 seconds
-    
+  {    
     // // PhotoResistor
     // // read the value from the sensor
     // sensorValue = analogRead(photoResistorPin);
