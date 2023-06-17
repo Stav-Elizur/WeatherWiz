@@ -28,6 +28,12 @@ void loop()
   BlynkProcessing();
   IRProcessing();
   HumidityProcessing();
+
+  #ifndef ENABLE_BLYNK
+    digitalWrite(ConfigPins::buildInLedPin, !digitalRead(ConfigPins::buildInLedPin));  
+  #endif
+  
+  delay(1000);
   {    
     // // PhotoResistor
     // // read the value from the sensor

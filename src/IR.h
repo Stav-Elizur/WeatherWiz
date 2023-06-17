@@ -134,7 +134,7 @@ void translateIR(uint64_t value) // takes action based on IR code received descr
 
     delay(500);
 
-    if (colorTransmittingIR != "")
+    if (Firebase.ready() && colorTransmittingIR != "")
     {
         Firebase.getInt(fbdo, "/" + colorTransmittingIR + "/CodeType");
         decode_type_t CodeType = (decode_type_t)(fbdo.to<uint32_t>());

@@ -6,7 +6,7 @@
 #include <addons/TokenHelper.h>
 #include "Config.h"
 
-#define ENABLE_BLYNK
+// #define ENABLE_BLYNK
 
 // Blynk global variables
 BlynkTimer timer;
