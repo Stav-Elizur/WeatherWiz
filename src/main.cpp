@@ -40,6 +40,8 @@ const int humidityInputPin=D6;
 BlynkTimer timer;
 
 // Firebase
+FirebaseAuth auth;
+FirebaseConfig config;
 FirebaseData fbdo;
 unsigned long sendDataPrevMillis = 0;
 unsigned long count = 0;
@@ -89,9 +91,6 @@ void EnableBlynk()
 
 void ConfigFirebase()
 {
-  FirebaseAuth auth;
-  FirebaseConfig config;
-
   config.api_key = Config::FIREBASE_TOKEN;
   auth.user.email = Config::USER_EMAIL;
   auth.user.password = Config::USER_PASSWORD;
