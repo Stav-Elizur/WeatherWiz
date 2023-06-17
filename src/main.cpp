@@ -7,6 +7,9 @@
 #include "DHTesp.h"
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include <FirebaseESP8266.h>
+#include <addons/TokenHelper.h>
+#include "Config.h"
 
 #define ENABLE_BLYNK
 
@@ -34,10 +37,12 @@ const int infraRedSensorOutputPin=D7;
 const int humidityInputPin=D6;
 
 // Blynk
-const char* ssid = "Elizur"; //replace this with your WiFi network name
-const char* password = "0547684611"; //replace this with your WiFi network password
-const char* blynkToken =  "oht3MaP6XwE4ToLGNU1Wte1_BkM3JRa7";
 BlynkTimer timer;
+
+// Firebase
+FirebaseData fbdo;
+unsigned long sendDataPrevMillis = 0;
+unsigned long count = 0;
 
 //IR Receiver stuff
 IRrecv irrecv(infraRedSensorInputPin);
@@ -73,13 +78,28 @@ void myTimerEvent()
 
 void EnableBlynk()
 {
-  Blynk.begin(blynkToken, ssid, password);
+  Blynk.begin(Config::BLYNK_TOKEN, Config::WIFI_SSID, Config::WIFI_PASSWORD);
   // You can also specify server:
   //Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "blynk.cloud", 80);
   //Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, IPAddress(192,168,1,100), 8080);
 
   // Setup a function to be called every second
   timer.setInterval(1000L, myTimerEvent);
+}
+
+void ConfigFirebase()
+{
+  FirebaseAuth auth;
+  FirebaseConfig config;
+
+  config.api_key = Config::FIREBASE_TOKEN;
+  auth.user.email = Config::USER_EMAIL;
+  auth.user.password = Config::USER_PASSWORD;
+  config.database_url = Config::FIREBASE_URL;
+
+  config.token_status_callback = tokenStatusCallback;
+
+  Firebase.begin(&config, &auth);
 }
 
 void BlynkProcessing()
@@ -291,6 +311,7 @@ void setup()
   // Blynk
   #ifdef ENABLE_BLYNK
     EnableBlynk();
+    ConfigFirebase();
   #endif
 
   // InfraRed
@@ -306,6 +327,73 @@ void setup()
 
 void loop()
 {  
+  
+  if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
+  {
+    sendDataPrevMillis = millis();
+
+    Serial.printf("Set bool... %s\n", Firebase.setBool(fbdo, F("/test/bool"), count % 2 == 0) ? "ok" : fbdo.errorReason().c_str());
+
+    Serial.printf("Get bool... %s\n", Firebase.getBool(fbdo, FPSTR("/test/bool")) ? fbdo.to<bool>() ? "true" : "false" : fbdo.errorReason().c_str());
+
+    bool bVal;
+    Serial.printf("Get bool ref... %s\n", Firebase.getBool(fbdo, F("/test/bool"), &bVal) ? bVal ? "true" : "false" : fbdo.errorReason().c_str());
+
+    Serial.printf("Set int... %s\n", Firebase.setInt(fbdo, F("/test/int"), count) ? "ok" : fbdo.errorReason().c_str());
+
+    Serial.printf("Get int... %s\n", Firebase.getInt(fbdo, F("/test/int")) ? String(fbdo.to<int>()).c_str() : fbdo.errorReason().c_str());
+
+    int iVal = 0;
+    Serial.printf("Get int ref... %s\n", Firebase.getInt(fbdo, F("/test/int"), &iVal) ? String(iVal).c_str() : fbdo.errorReason().c_str());
+
+    Serial.printf("Set float... %s\n", Firebase.setFloat(fbdo, F("/test/float"), count + 10.2) ? "ok" : fbdo.errorReason().c_str());
+
+    Serial.printf("Get float... %s\n", Firebase.getFloat(fbdo, F("/test/float")) ? String(fbdo.to<float>()).c_str() : fbdo.errorReason().c_str());
+
+    Serial.printf("Set double... %s\n", Firebase.setDouble(fbdo, F("/test/double"), count + 35.517549723765) ? "ok" : fbdo.errorReason().c_str());
+
+    Serial.printf("Get double... %s\n", Firebase.getDouble(fbdo, F("/test/double")) ? String(fbdo.to<double>()).c_str() : fbdo.errorReason().c_str());
+
+    Serial.printf("Set string... %s\n", Firebase.setString(fbdo, F("/test/string"), "Hello World!") ? "ok" : fbdo.errorReason().c_str());
+
+    Serial.printf("Get string... %s\n", Firebase.getString(fbdo, F("/test/string")) ? fbdo.to<const char *>() : fbdo.errorReason().c_str());
+
+    // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create_Parse_Edit.ino
+    FirebaseJson json;
+
+    if (count == 0)
+    {
+      json.set("value/round/" + String(count), F("cool!"));
+      json.set(F("vaue/ts/.sv"), F("timestamp"));
+      Serial.printf("Set json... %s\n", Firebase.set(fbdo, F("/test/json"), json) ? "ok" : fbdo.errorReason().c_str());
+    }
+    else
+    {
+      json.add(String(count), "smart!");
+      Serial.printf("Update node... %s\n", Firebase.updateNode(fbdo, F("/test/json/value/round"), json) ? "ok" : fbdo.errorReason().c_str());
+    }
+
+    Serial.println();
+
+    // For generic set/get functions.
+
+    // For generic set, use Firebase.set(fbdo, <path>, <any variable or value>)
+
+    // For generic get, use Firebase.get(fbdo, <path>).
+    // And check its type with fbdo.dataType() or fbdo.dataTypeEnum() and
+    // cast the value from it e.g. fbdo.to<int>(), fbdo.to<std::string>().
+
+    // The function, fbdo.dataType() returns types String e.g. string, boolean,
+    // int, float, double, json, array, blob, file and null.
+
+    // The function, fbdo.dataTypeEnum() returns type enum (number) e.g. fb_esp_rtdb_data_type_null (1),
+    // fb_esp_rtdb_data_type_integer, fb_esp_rtdb_data_type_float, fb_esp_rtdb_data_type_double,
+    // fb_esp_rtdb_data_type_boolean, fb_esp_rtdb_data_type_string, fb_esp_rtdb_data_type_json,
+    // fb_esp_rtdb_data_type_array, fb_esp_rtdb_data_type_blob, and fb_esp_rtdb_data_type_file (10)
+
+    count++;
+  }
+
   BlynkProcessing();
   IRProcessing();
   HumidityProcessing();
