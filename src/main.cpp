@@ -14,6 +14,8 @@ void setup()
   // Blynk
   #ifdef ENABLE_BLYNK
     InitConnection();
+  #else
+    digitalWrite(ConfigPins::buildInLedPin, LOW); 
   #endif
 
   // InfraRed

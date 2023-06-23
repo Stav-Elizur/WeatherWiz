@@ -5,10 +5,13 @@
 #include <FirebaseESP8266.h>
 #include <addons/TokenHelper.h>
 #include "Config.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
-// #define ENABLE_BLYNK
+#define ENABLE_BLYNK
 
 // Blynk global variables
+const char* PERGOLA_STATE = " Pergola State";
 BlynkTimer timer;
 
 // Firebase global variables
@@ -16,13 +19,18 @@ FirebaseAuth auth;
 FirebaseConfig config;
 FirebaseData fbdo;
 
+// NTP global variables
+const long utcOffsetInSeconds = 3 * 3600;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+
 
 // Functions
 void myTimerEvent()
 {
-  // You can send any value at any time.
-  // Please don't send more that 10 values per second.
-  Blynk.virtualWrite(V2, millis() / 1000);
+  timeClient.update();
+  Blynk.virtualWrite(V2, timeClient.getFormattedTime());
 }
 
 void EnableBlynk()
@@ -43,6 +51,11 @@ void ConfigFirebase()
   Firebase.begin(&config, &auth);
 }
 
+void ConfigNTP()
+{
+  timeClient.begin();
+}
+
 void BlynkProcessing()
 {
   Blynk.run();
@@ -53,15 +66,15 @@ void BlynkProcessing()
 BLYNK_WRITE(V0)
 {
   digitalWrite(ConfigPins::buildInLedPin, !digitalRead(ConfigPins::buildInLedPin)); 
-  // Set incoming value from pin V0 to a variable
-  int value = param.asInt();
+  
+  String pergolaState = digitalRead(ConfigPins::buildInLedPin) ? "OFF" : "ON";
 
   // Update state
-  Blynk.virtualWrite(V1, value);
+  Blynk.virtualWrite(V1, pergolaState);
 
   if (Firebase.ready())
   {
-    Firebase.setString(fbdo, F("/Led State"), digitalRead(ConfigPins::buildInLedPin) ? "OFF" : "ON");
+    Firebase.setString(fbdo, F("/PERGOLA_STATE"), pergolaState);
   }
 }
 
@@ -78,7 +91,13 @@ void InitConnection()
 {
     EnableBlynk();
     ConfigFirebase();
-    Firebase.setString(fbdo, F("/Led State"), "OFF");
+
+    String pergolaState = "";
+    Firebase.getString(fbdo, F("/PERGOLA_STATE"), &pergolaState);
+
+    digitalWrite(ConfigPins::buildInLedPin, pergolaState == "ON" ? LOW : HIGH);
+    Blynk.virtualWrite(V0, pergolaState == "ON" ? 1 : 0);
+    Blynk.virtualWrite(V1, pergolaState);
 }
 
 #endif
