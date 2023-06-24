@@ -69,6 +69,15 @@ BLYNK_WRITE(V0)
   
   String pergolaState = digitalRead(ConfigPins::buildInLedPin) ? "OFF" : "ON";
 
+  if (pergolaState == "ON")
+  {
+    // Open
+  }
+  else
+  {
+    // Close
+  }
+
   // Update state
   Blynk.virtualWrite(V1, pergolaState);
 

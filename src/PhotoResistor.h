@@ -8,12 +8,12 @@ void PhotoResistorProcessing()
     //check if the LDR status is <= 300
     if (ldrStatus <=300)
     {
-        digitalWrite(ConfigPins::buildInLedPin, LOW); 
+        digitalWrite(ConfigPins::buildInLedPin, LOW);  // Relay
         Serial.println("LDR is DARK, LED is ON");
     }
     else 
     {
-        digitalWrite(ConfigPins::buildInLedPin, HIGH); 
+        digitalWrite(ConfigPins::buildInLedPin, HIGH); // Relay
         Serial.println("LDR is LIGHT, LED is OFF");
     }
 }
