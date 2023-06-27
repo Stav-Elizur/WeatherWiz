@@ -26,7 +26,7 @@ void TransmitIRSignal(decode_type_t type, void* data, uint32_t numOfData)
     {
         PrintInfoLn("NEC remote control");
         uint64_t code = *((uint64_t*)data);
-        irsend.sendNEC(code, numOfData);
+        irsend.sendNEC(code, numOfData, 3);
         break;
     }
     case SONY:
@@ -141,8 +141,14 @@ void translateIR(uint64_t value) // takes action based on IR code received descr
         Firebase.getInt(fbdo, "/" + colorTransmittingIR + "/Code");
         uint32_t Code = fbdo.to<uint32_t>();
         Firebase.getInt(fbdo, "/" + colorTransmittingIR + "/BitNumbers");
-        uint32_t numOfRedColorBits = fbdo.to<uint32_t>();
-        TransmitIRSignal(CodeType, (void*)&Code, numOfRedColorBits);
+        uint32_t numOfColorBits = fbdo.to<uint32_t>();
+        PrintInfo("Code type: ");
+        PrintInfoLn(CodeType);
+        PrintInfo("Code: ");
+        PrintInfoLn(Code);
+        PrintInfo("numOfColorBits: ");
+        PrintInfoLn(numOfColorBits);
+        TransmitIRSignal(CodeType, (void*)&Code, numOfColorBits);
     }
 }
 

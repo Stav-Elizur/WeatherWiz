@@ -11,6 +11,8 @@ void setup()
   Serial.begin(9600);
   pinMode(ConfigPins::buildInLedPin, OUTPUT);
   pinMode(ConfigPins::photoResistorPin, INPUT);
+  pinMode(ConfigPins::RelayOutputPin, OUTPUT);
+  pinMode(ConfigPins::RelayOutputPin, HIGH);
   digitalWrite(ConfigPins::buildInLedPin, HIGH); 
 
   // Blynk
