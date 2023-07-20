@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "Communication.h"
+#include "IRCommunicationManager.h"
 #include "IR.h"
 #include "Humidity.h"
 #include "PhotoResistor.h"
@@ -16,11 +17,7 @@ void setup()
   digitalWrite(ConfigPins::buildInLedPin, HIGH); 
 
   // Blynk
-  #ifdef ENABLE_BLYNK
-    InitConnection();
-  #else
-    digitalWrite(ConfigPins::buildInLedPin, LOW); 
-  #endif
+  InitConnection();
 
   // InfraRed
   InitIR();
@@ -35,19 +32,4 @@ void loop()
   IRProcessing();
   HumidityProcessing();
   PhotoResistorProcessing();
-
-  #ifndef ENABLE_BLYNK
-    digitalWrite(ConfigPins::buildInLedPin, !digitalRead(ConfigPins::buildInLedPin));  
-  #endif
-  
-  delay(1000);
-  {  
-    // // Relay
-    // digitalWrite(relayPin, HIGH);
-    // // Wait for 1000 millisecond(s)
-    // delay(1000);
-    // digitalWrite(relayPin, LOW);
-    // // Wait for 1000 millisecond(s)
-    // delay(1000);
-  }
 }

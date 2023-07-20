@@ -7,106 +7,109 @@
 #include "Config.h"
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include "Logging.h"
 
-#define ENABLE_BLYNK
+namespace Communication
+{
+  // Blynk global variables
+  BlynkTimer timer;
 
-// Blynk global variables
-const char* PERGOLA_STATE = " Pergola State";
-BlynkTimer timer;
+  // Firebase global variables
+  FirebaseAuth auth;
+  FirebaseConfig config;
+  FirebaseData fbdo;
 
-// Firebase global variables
-FirebaseAuth auth;
-FirebaseConfig config;
-FirebaseData fbdo;
-
-// NTP global variables
-const long utcOffsetInSeconds = 3 * 3600;
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
-
+  // NTP global variables
+  const long utcOffsetInSeconds = 3 * 3600;
+  char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+  WiFiUDP ntpUDP;
+  NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+}
 
 // Functions
 void myTimerEvent()
 {
-  timeClient.update();
-  Blynk.virtualWrite(V2, timeClient.getFormattedTime());
+  Communication::timeClient.update();
+  Blynk.virtualWrite(V2, Communication::timeClient.getFormattedTime());
 }
 
 void EnableBlynk()
 {
   Blynk.begin(ConfigWirelessConnection::BLYNK_TOKEN, ConfigWirelessConnection::WIFI_SSID, ConfigWirelessConnection::WIFI_PASSWORD);
-  timer.setInterval(1000L, myTimerEvent);
+  Communication::timer.setInterval(1000L, myTimerEvent);
 }
 
 void ConfigFirebase()
 {
-  config.api_key = ConfigWirelessConnection::FIREBASE_TOKEN;
-  auth.user.email = ConfigWirelessConnection::USER_EMAIL;
-  auth.user.password = ConfigWirelessConnection::USER_PASSWORD;
-  config.database_url = ConfigWirelessConnection::FIREBASE_URL;
+  Communication::config.api_key = ConfigWirelessConnection::FIREBASE_TOKEN;
+  Communication::auth.user.email = ConfigWirelessConnection::USER_EMAIL;
+  Communication::auth.user.password = ConfigWirelessConnection::USER_PASSWORD;
+  Communication::config.database_url = ConfigWirelessConnection::FIREBASE_URL;
 
-  config.token_status_callback = tokenStatusCallback;
+  Communication::config.token_status_callback = tokenStatusCallback;
 
-  Firebase.begin(&config, &auth);
+  Firebase.begin(&Communication::config, &Communication::auth);
 }
 
 void ConfigNTP()
 {
-  timeClient.begin();
+  Communication::timeClient.begin();
 }
 
 void BlynkProcessing()
 {
   Blynk.run();
-  timer.run();
+  Communication::timer.run();
 }
 
-// This function is called every time the Virtual Pin 0 state changes
-BLYNK_WRITE(V0)
+void UpdateBlynkApp(String side, String pergolaState)
 {
-  digitalWrite(ConfigPins::buildInLedPin, !digitalRead(ConfigPins::buildInLedPin)); 
-  
-  String pergolaState = digitalRead(ConfigPins::buildInLedPin) ? "OFF" : "ON";
-
-  if (pergolaState == "ON")
-  {
-    // Open
-  }
-  else
-  {
-    // Close
-  }
-
-  // Update state
-  Blynk.virtualWrite(V1, pergolaState);
-
   if (Firebase.ready())
   {
-    Firebase.setString(fbdo, F("/PERGOLA_STATE"), pergolaState);
+    if (side == DataBaseArgs::LeftPergola)
+    {
+        Blynk.virtualWrite(V0, pergolaState == DataBaseArgs::PergolaOpen ? 1 : 0);
+        Blynk.virtualWrite(V1, pergolaState);
+    }
+    else
+    {
+        Blynk.virtualWrite(V3, pergolaState == DataBaseArgs::PergolaOpen ? 1 : 0);
+        Blynk.virtualWrite(V4, pergolaState);
+    }
   }
 }
 
-// This function is called every time the device is connected to the Blynk.Cloud
-BLYNK_CONNECTED()
+void UpdatePergolaStateInFirebase(String side, String pergolaNewState)
 {
-  // Change Web Link Button message to "Congratulations!"
-  Blynk.setProperty(V3, "offImageUrl", "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations.png");
-  Blynk.setProperty(V3, "onImageUrl",  "https://static-image.nyc3.cdn.digitaloceanspaces.com/general/fte/congratulations_pressed.png");
-  Blynk.setProperty(V3, "url", "https://docs.blynk.io/en/getting-started/what-do-i-need-to-blynk/how-quickstart-device-was-made");
+  if (Firebase.ready())
+  {
+    Firebase.setString(Communication::fbdo,  "/" + side + "/" + DataBaseArgs::PergolaState, pergolaNewState);
+  }
 }
 
-void InitConnection()
+String GetPegorlaState(String side)
 {
-    EnableBlynk();
-    ConfigFirebase();
-
     String pergolaState = "";
-    Firebase.getString(fbdo, F("/PERGOLA_STATE"), &pergolaState);
 
-    digitalWrite(ConfigPins::buildInLedPin, pergolaState == "ON" ? LOW : HIGH);
-    Blynk.virtualWrite(V0, pergolaState == "ON" ? 1 : 0);
-    Blynk.virtualWrite(V1, pergolaState);
+    if (Firebase.ready())
+    {
+        Firebase.getString(Communication::fbdo, "/" + side + "/" + DataBaseArgs::PergolaState, &pergolaState);
+    }
+
+    return pergolaState;
+}
+
+uint32_t GetPergolaCode(String side, String state)
+{
+    uint32_t code = 0x0;
+
+    if (Firebase.ready())
+    {
+        Firebase.getInt(Communication::fbdo, "/" + side + "/" + state + "/Code");
+        code = Communication::fbdo.to<uint32_t>();
+    }
+
+    return code;
 }
 
 #endif
