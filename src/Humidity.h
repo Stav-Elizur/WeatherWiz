@@ -9,24 +9,26 @@
 DHTesp dht;
 
 // Functions
-void HumidityProcessing()
+bool GotHumidityInfo(float* temperature, float* humidity)
 {
   delay(2 * dht.getMinimumSamplingPeriod());
 
-  float humidity = dht.getHumidity();
-  float temperature = dht.getTemperature();
-
-  PrintInfo(dht.getStatusString());
+  *humidity = dht.getHumidity();
+  *temperature = dht.getTemperature();
+  String status = dht.getStatusString();
+  PrintInfo(status);
   PrintInfo("\t");
-  PrintInfo(humidity, 1);
+  PrintInfo(*humidity, 1);
   PrintInfo("\t\t");
-  PrintInfoLn(temperature, 1);
+  PrintInfoLn(*temperature, 1);
   PrintDebug("\t\t");
-  PrintDebug(dht.toFahrenheit(temperature), 1);
+  PrintDebug(dht.toFahrenheit(*temperature), 1);
   PrintDebug("\t\t");
-  PrintDebug(dht.computeHeatIndex(temperature, humidity, false), 1);
+  PrintDebug(dht.computeHeatIndex(*temperature, *humidity, false), 1);
   PrintDebug("\t\t");
-  PrintDebugLn(dht.computeHeatIndex(dht.toFahrenheit(temperature), humidity, true), 1);
+  PrintDebugLn(dht.computeHeatIndex(dht.toFahrenheit(*temperature), *humidity, true), 1);
+
+  return status == "OK";
 }
 
 void InitHumidity()

@@ -6,6 +6,7 @@
 #include "Logging.h"
 #include "stdint.h"
 #include "Config.h"
+#include "Humidity.h"
 
 void SendRFPergolaCode(String side, String pergolaNewState)
 {
@@ -97,6 +98,20 @@ void InitConnection()
   pergolaState = GetPegorlaState(DataBaseArgs::RightPergola);
   SendRFPergolaCode(DataBaseArgs::RightPergola, pergolaState);
   UpdateBlynkApp(DataBaseArgs::RightPergola, pergolaState);
+}
+
+void HumidityProcessing()
+{
+  float temperature;
+  float humidity;
+  if (GotHumidityInfo(&temperature, &humidity))
+  {
+    if (humidity > 60)
+    {
+      SendRFPergolaCode(DataBaseArgs::RightPergola, "CLOSE");
+      UpdateBlynkApp(DataBaseArgs::RightPergola, "CLOSE");
+    }
+  }
 }
 
 #endif

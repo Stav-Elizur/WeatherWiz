@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "Communication.h"
-#include "IRCommunicationManager.h"
+#include "ControllerManager.h"
 #include "Humidity.h"
 #include "PhotoResistor.h"
 #include "Config.h"
