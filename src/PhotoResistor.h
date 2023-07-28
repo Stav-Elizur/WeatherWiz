@@ -12,12 +12,14 @@ void PhotoResistorProcessing()
     //check if the LDR status is <= 300
     if (ldrStatus <=300)
     {
-        digitalWrite(ConfigPins::RelayOutputPin, HIGH);  // Relay
+        pinMode(ConfigPins::RelayOutputPin, OUTPUT); // Relay
+        digitalWrite(ConfigPins::buildInLed, HIGH);  
         PrintInfoLn("LDR is DARK, LED is ON");
     }
     else 
     {
-        digitalWrite(ConfigPins::RelayOutputPin, LOW); // Relay
+        pinMode(ConfigPins::RelayOutputPin, INPUT); // Relay
+        digitalWrite(ConfigPins::buildInLed, LOW); 
         PrintInfoLn("LDR is LIGHT, LED is OFF");
     }
 }

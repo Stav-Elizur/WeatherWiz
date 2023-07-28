@@ -49,7 +49,7 @@ void SendRFPergolaCode(String side, String pergolaNewState)
 // This function is called every time the Virtual Pin 0 state changes
 BLYNK_WRITE(V0)
 {
-  String pergolaNewState = param.asString();
+  String pergolaNewState = param.asInt() == 1 ? DataBaseArgs::PergolaOpen : DataBaseArgs::PergolaClose;
   PrintInfoLn(pergolaNewState);
 
   SendRFPergolaCode(DataBaseArgs::LeftPergola, pergolaNewState);
@@ -60,7 +60,7 @@ BLYNK_WRITE(V0)
 // This function is called every time the Virtual Pin 3 state changes
 BLYNK_WRITE(V3)
 {
-  String pergolaNewState = param.asString();
+  String pergolaNewState = param.asInt() == 1 ? DataBaseArgs::PergolaOpen : DataBaseArgs::PergolaClose;
   PrintInfoLn(pergolaNewState);
 
   SendRFPergolaCode(DataBaseArgs::RightPergola, pergolaNewState);
@@ -71,9 +71,9 @@ BLYNK_WRITE(V3)
 // For program
 BLYNK_WRITE(V5)
 {
-  String program = param.asString();
-  
-  if (program == "ON")
+  uint32_t program = param.asInt();;
+
+  if (program)
   {
     SendRFPergolaCode(DataBaseArgs::RightPergola, "Program");
   }

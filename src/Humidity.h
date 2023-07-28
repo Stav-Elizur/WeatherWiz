@@ -11,7 +11,7 @@ DHTesp dht;
 // Functions
 void HumidityProcessing()
 {
-  delay(dht.getMinimumSamplingPeriod());
+  delay(2 * dht.getMinimumSamplingPeriod());
 
   float humidity = dht.getHumidity();
   float temperature = dht.getTemperature();
