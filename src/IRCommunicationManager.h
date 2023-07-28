@@ -68,6 +68,17 @@ BLYNK_WRITE(V3)
   UpdatePergolaStateInFirebase(DataBaseArgs::RightPergola, pergolaNewState);
 }
 
+// For program
+BLYNK_WRITE(V5)
+{
+  String program = param.asString();
+  
+  if (program == "ON")
+  {
+    SendRFPergolaCode(DataBaseArgs::RightPergola, "Program");
+  }
+}
+
 // This function is called every time the device is connected to the Blynk.Cloud
 BLYNK_CONNECTED()
 {
