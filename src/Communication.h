@@ -87,6 +87,14 @@ void UpdatePergolaStateInFirebase(String side, String pergolaNewState)
   }
 }
 
+void UpdateRollingCodeInFirebase(String side, uint32_t rollingCode)
+{
+  if (Firebase.ready())
+  {
+    Firebase.setInt(Communication::fbdo,  "/" + side + "/" + DataBaseArgs::RollingCode, rollingCode);
+  }
+}
+
 String GetPegorlaState(String side)
 {
     String pergolaState = "";
@@ -97,19 +105,6 @@ String GetPegorlaState(String side)
     }
 
     return pergolaState;
-}
-
-uint32_t GetPergolaCode(String side, String state)
-{
-    uint32_t code = 0x0;
-
-    if (Firebase.ready())
-    {
-        Firebase.getInt(Communication::fbdo, "/" + side + "/" + state + "/Code");
-        code = Communication::fbdo.to<uint32_t>();
-    }
-
-    return code;
 }
 
 #endif

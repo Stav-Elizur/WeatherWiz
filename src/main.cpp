@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "Communication.h"
 #include "IRCommunicationManager.h"
-#include "IR.h"
 #include "Humidity.h"
 #include "PhotoResistor.h"
 #include "Config.h"
@@ -13,14 +12,13 @@ void setup()
   pinMode(ConfigPins::buildInLedPin, OUTPUT);
   pinMode(ConfigPins::photoResistorPin, INPUT);
   pinMode(ConfigPins::RelayOutputPin, OUTPUT);
-  pinMode(ConfigPins::RelayOutputPin, HIGH);
+  pinMode(ConfigPins::RelayOutputPin, OUTPUT);
+  pinMode(ConfigPins::rfOutputPin, OUTPUT);
+  digitalWrite(ConfigPins::rfOutputPin, LOW);
   digitalWrite(ConfigPins::buildInLedPin, HIGH); 
 
   // Blynk
   InitConnection();
-
-  // InfraRed
-  InitIR();
 
   // Humidity
   InitHumidity();
@@ -29,7 +27,6 @@ void setup()
 void loop()
 {
   BlynkProcessing();
-  IRProcessing();
   HumidityProcessing();
   PhotoResistorProcessing();
 }
