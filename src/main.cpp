@@ -10,7 +10,6 @@ void setup()
 {
   Serial.begin(9600);
   pinMode(ConfigPins::photoResistorPin, INPUT);
-  pinMode(ConfigPins::RelayOutputPin, OUTPUT);
   pinMode(ConfigPins::buildInLed, OUTPUT);
   pinMode(ConfigPins::rfOutputPin, OUTPUT);
   digitalWrite(ConfigPins::rfOutputPin, LOW);

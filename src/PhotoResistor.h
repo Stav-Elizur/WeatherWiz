@@ -7,7 +7,8 @@
 
 void PhotoResistorProcessing()
 {
-    int ldrStatus = analogRead(ConfigPins::photoResistorPin);   //read the status of the LDR value
+    //read the status of the LDR value
+    int ldrStatus = analogRead(ConfigPins::photoResistorPin); 
 
     //check if the LDR status is <= 300
     if (ldrStatus <=300)
